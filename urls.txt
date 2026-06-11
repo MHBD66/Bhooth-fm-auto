@@ -1,0 +1,10 @@
+# Bhoot FM Auto - Audio URLs
+# Add one URL per line. Lines starting with # are ignored.
+# Supported: YouTube, SoundCloud, direct MP3 links, and most yt-dlp compatible sources
+# Replace these demo URLs with your actual Bhoot FM audio URLs
+
+# Demo URLs (public domain horror stories for testing)
+https://archive.org/download/librivoxaudio/horror_story_001_librivox.mp3
+https://archive.org/download/librivoxaudio/horror_story_002_librivox.mp3
+
+# Add your Bhoot FM URLs below:
