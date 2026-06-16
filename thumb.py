@@ -50,10 +50,23 @@ def generate_fallback_thumbnail(story_name):
         alpha = random.randint(10, 60)
         draw.ellipse([x1-r, y1-r, x1+r, y1+r], fill=(40, 20, 60, alpha))
 
-    try:
-        font_large = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 60)
-        font_small = ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 30)
-    except:
+    FONT_PATHS = [
+        '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+        '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf',
+        '/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf',
+        '/usr/share/fonts/truetype/msttcorefonts/Impact.ttf',
+    ]
+    font_large = None
+    font_small = None
+    for fp in FONT_PATHS:
+        if os.path.exists(fp):
+            try:
+                font_large = ImageFont.truetype(fp, 60)
+                font_small = ImageFont.truetype(fp, 30)
+                break
+            except:
+                continue
+    if font_large is None:
         font_large = ImageFont.load_default()
         font_small = ImageFont.load_default()
 

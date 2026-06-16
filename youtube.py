@@ -1,7 +1,7 @@
 import os
 import json
 import pickle
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
@@ -12,7 +12,6 @@ SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
 def get_authenticated_service():
     credentials = None
     token_path = os.path.join(config.BASE_DIR, 'token.pickle')
-    client_secret_path = os.path.join(config.BASE_DIR, 'client_secret.json')
 
     if os.path.exists(token_path):
         with open(token_path, 'rb') as token:
@@ -22,11 +21,17 @@ def get_authenticated_service():
         if credentials and credentials.expired and credentials.refresh_token:
             credentials.refresh(Request())
         else:
-            if not os.path.exists(client_secret_path):
-                print('client_secret.json not found. Run setup_auth.py first.')
-                return None
-            flow = InstalledAppFlow.from_client_secrets_file(client_secret_path, SCOPES)
-            credentials = flow.run_local_server(port=8080)
+            if config.YOUTUBE_TOKEN_JSON and config.YOUTUBE_TOKEN_JSON != '{}':
+                token_data = json.loads(config.YOUTUBE_TOKEN_JSON)
+                credentials = Credentials.from_authorized_user_info(token_data, SCOPES)
+            else:
+                client_secret_path = os.path.join(config.BASE_DIR, 'client_secret.json')
+                if not os.path.exists(client_secret_path):
+                    print('No auth method available. Set YOUTUBE_TOKEN_JSON env var or provide client_secret.json')
+                    return None
+                from google_auth_oauthlib.flow import InstalledAppFlow
+                flow = InstalledAppFlow.from_client_secrets_file(client_secret_path, SCOPES)
+                credentials = flow.run_local_server(port=8080)
 
         with open(token_path, 'wb') as token:
             pickle.dump(credentials, token)
@@ -36,6 +41,7 @@ def get_authenticated_service():
 def upload_video(video_path, story_name, description=''):
     youtube = get_authenticated_service()
     if not youtube:
+        print('YouTube service not available')
         return False
 
     title = f'{config.YOUTUBE_CHANNEL_NAME} - {story_name.replace("_", " ").replace("-", " ")}'
@@ -43,7 +49,7 @@ def upload_video(video_path, story_name, description=''):
         description = (
             f'{title}\n\n'
             f'ভূতের গল্প | Bhoot FM | Bangla Horror Story\n\n'
-            f'Subscribe for more horror stories: {config.YOUTUBE_CHANNEL_NAME}\n\n'
+            f'Subscribe for more horror stories\n\n'
             f'#BhootFM #BhooterGolpo #BanglaHorror #GhostStory #ভূতেরগল্প'
         )
 
