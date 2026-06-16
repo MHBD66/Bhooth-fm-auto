@@ -1,9 +1,8 @@
 import os
 import sys
 import json
-import signal
+import traceback
 from http.server import HTTPServer, BaseHTTPRequestHandler
-import config
 from main import run_pipeline
 
 class HealthHandler(BaseHTTPRequestHandler):
@@ -18,15 +17,19 @@ class HealthHandler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
             try:
+                print('Pipeline triggered via /run')
                 success = run_pipeline()
                 self.wfile.write(json.dumps({
                     "status": "success" if success else "failed",
                     "message": "Pipeline completed" if success else "Pipeline failed"
                 }).encode())
             except Exception as e:
+                tb = traceback.format_exc()
+                print(f'Pipeline error: {e}\n{tb}')
                 self.wfile.write(json.dumps({
                     "status": "error",
-                    "message": str(e)
+                    "message": str(e),
+                    "traceback": tb
                 }).encode())
         else:
             self.send_response(404)
@@ -38,13 +41,18 @@ class HealthHandler(BaseHTTPRequestHandler):
 def run_server():
     port = int(os.getenv('PORT', 8080))
     server = HTTPServer(('0.0.0.0', port), HealthHandler)
-    print(f'Health server running on port {port}')
+    print(f'[BOOT] Server starting on port {port}')
 
-    # If RAILWAY_CRON is set, run pipeline immediately
     if os.getenv('RAILWAY_CRON'):
-        print('CRON trigger detected. Running pipeline...')
-        run_pipeline()
+        print('[BOOT] RAILWAY_CRON detected, running pipeline...')
+        try:
+            run_pipeline()
+            print('[BOOT] Pipeline completed')
+        except Exception as e:
+            tb = traceback.format_exc()
+            print(f'[BOOT] Pipeline error: {e}\n{tb}')
 
+    print(f'[BOOT] Server ready on port {port}')
     server.serve_forever()
 
 if __name__ == '__main__':

@@ -1,15 +1,19 @@
 import os
 import json
 import pickle
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
 import config
 
 SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
 
 def get_authenticated_service():
+    try:
+        from google.oauth2.credentials import Credentials
+        from google.auth.transport.requests import Request
+        from googleapiclient.discovery import build
+    except ImportError as e:
+        print(f'Google API imports failed: {e}')
+        return None
+
     credentials = None
     token_path = os.path.join(config.BASE_DIR, 'token.pickle')
 
@@ -43,6 +47,8 @@ def upload_video(video_path, story_name, description=''):
     if not youtube:
         print('YouTube service not available')
         return False
+
+    from googleapiclient.http import MediaFileUpload
 
     title = f'{config.YOUTUBE_CHANNEL_NAME} - {story_name.replace("_", " ").replace("-", " ")}'
     if not description:
