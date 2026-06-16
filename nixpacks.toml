@@ -2,4 +2,5 @@
 nixPkgs = ['ffmpeg', 'yt-dlp', 'fontconfig', 'dejavu-fonts']
 
 [deploy]
-startCmd = "python main.py"
+startCmd = "python server.py"
+healthCheckPath = "/health"

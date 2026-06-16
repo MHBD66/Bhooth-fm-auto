@@ -64,11 +64,18 @@ Railway → **Settings** → **Cron** → Add:
 ```
 0 6 * * *
 ```
-This runs daily at 6 AM UTC. The pipeline picks next unprocessed URL from `urls.txt` and uploads it.
+This runs daily at 6 AM UTC. The cron sends a POST/GET to your service which triggers the pipeline.
+
+The service stays alive with a health endpoint. Railway won't show it as "crashed."
 
 ### 7. Manual Trigger
 
-Click **Redeploy** or go to **Deployments** → **Trigger Deploy** to run manually.
+```bash
+# Trigger pipeline via Railway's cron or:
+curl https://your-app.railway.app/run
+```
+
+Or go to Railway → **Variables** → Add `RAILWAY_CRON=true` → **Redeploy**.
 
 ## Local Run
 
