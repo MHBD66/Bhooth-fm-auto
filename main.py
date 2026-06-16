@@ -5,6 +5,7 @@ from audio import download_audio
 from thumb import generate_ai_thumbnail
 from video import create_video
 from youtube import upload_video
+from search import get_first_new_video
 
 def get_next_url():
     if not os.path.exists(config.URLS_FILE):
@@ -21,7 +22,7 @@ def get_next_url():
 
     remaining = [u for u in urls if u not in done]
     if not remaining:
-        print('All URLs processed. Add new URLs to urls.txt')
+        print('All URLs in urls.txt already processed.')
         return None
 
     return remaining[0]
@@ -38,16 +39,27 @@ def run_pipeline():
     os.makedirs(config.VIDEO_DIR, exist_ok=True)
 
     url = get_next_url()
+    story_name = None
+
     if not url:
-        print('No URL to process. Exiting.')
-        return False
+        print('No URLs in urls.txt. Searching YouTube...')
+        video = get_first_new_video()
+        if not video:
+            print('No new videos found on YouTube.')
+            return False
+        url = video['url']
+        story_name = video['title']
+        print(f'Found: {story_name}')
+    else:
+        if not url.startswith('http'):
+            print(f'Invalid URL: {url}')
+            return False
 
     print(f'Processing URL: {url}')
 
-    audio_path, story_name = download_audio(url)
+    audio_path, story_name = download_audio(url, story_name)
     if not audio_path or not story_name:
-        print('Audio download failed. Skipping.')
-        mark_done(url)
+        print('Audio download failed. Will retry next run.')
         return False
 
     print(f'Audio downloaded: {audio_path}')

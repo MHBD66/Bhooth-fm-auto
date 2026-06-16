@@ -24,9 +24,12 @@ def get_story_name(url):
         pass
     return f'story_{get_random_id()}'
 
-def download_audio(url):
+def download_audio(url, story_name=None):
     os.makedirs(config.AUDIO_DIR, exist_ok=True)
-    story_name = get_story_name(url)
+    if story_name:
+        story_name = sanitize_filename(story_name)
+    else:
+        story_name = get_story_name(url)
     output_path = os.path.join(config.AUDIO_DIR, f'{story_name}.%(ext)s')
 
     try:

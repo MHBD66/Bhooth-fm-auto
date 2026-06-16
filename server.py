@@ -4,6 +4,7 @@ import json
 import traceback
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from main import run_pipeline
+from search import search_new_videos
 
 class HealthHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -31,6 +32,23 @@ class HealthHandler(BaseHTTPRequestHandler):
                     "message": str(e),
                     "traceback": tb
                 }).encode())
+        elif self.path == '/search':
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            try:
+                videos = search_new_videos()
+                self.wfile.write(json.dumps({
+                    "count": len(videos),
+                    "videos": [{"url": v["url"], "title": v["title"]} for v in videos[:20]]
+                }).encode())
+            except Exception as e:
+                tb = traceback.format_exc()
+                self.wfile.write(json.dumps({
+                    "status": "error",
+                    "message": str(e),
+                    "traceback": tb
+                }).encode())
         else:
             self.send_response(404)
             self.end_headers()
@@ -39,6 +57,8 @@ class HealthHandler(BaseHTTPRequestHandler):
         pass
 
 def run_server():
+    sys.stdout.reconfigure(line_buffering=True)
+    sys.stderr.reconfigure(line_buffering=True)
     port = int(os.getenv('PORT', 8080))
     server = HTTPServer(('0.0.0.0', port), HealthHandler)
     print(f'[BOOT] Server starting on port {port}')
