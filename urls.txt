@@ -1,10 +1,11 @@
 # Bhoot FM Auto - Audio URLs
 # One URL per line. Lines starting with # are ignored.
 # Supported: YouTube, SoundCloud, direct MP3, etc.
-# Replace with your actual Bhoot FM URLs for production
 
-# Demo: reliable free audio for testing pipeline
-https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3
-https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3
+# !!! Replace these with your actual Bhoot FM story URLs !!!
+# Example:
+# https://www.youtube.com/watch?v=YOUR_VIDEO_ID
+# https://soundcloud.com/your-account/your-story
 
 # Add your Bhoot FM URLs below:
+
