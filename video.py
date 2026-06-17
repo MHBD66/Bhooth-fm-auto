@@ -1,10 +1,16 @@
 import os
+import re
 import subprocess
 import config
 
+def sanitize_filename(name):
+    name = re.sub(r'[<>:"/\\|?*]', '_', name)
+    return name[:100]
+
 def create_video(audio_path, thumb_path, story_name):
     os.makedirs(config.VIDEO_DIR, exist_ok=True)
-    video_path = os.path.join(config.VIDEO_DIR, f'{story_name}.mp4')
+    safe_name = sanitize_filename(story_name)
+    video_path = os.path.join(config.VIDEO_DIR, f'{safe_name}.mp4')
 
     cmd = [
         'ffmpeg',

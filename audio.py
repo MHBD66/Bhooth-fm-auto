@@ -36,14 +36,12 @@ def download_audio(url, story_name=None):
     cookies_arg = ['--cookies', cookies_path] if os.path.exists(cookies_path) else []
 
     clients = [
-        ['--extractor-args', 'youtube:player_client=ios;skip_webpage_download=True',
+        ['--extractor-args', 'youtube:player_client=ios',
          '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'],
         ['--extractor-args', 'youtube:player_client=web_embedded;skip_webpage_download=True',
          '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'],
         ['--extractor-args', 'youtube:player_client=android;skip_webpage_download=True',
          '--user-agent', 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.113 Mobile Safari/537.36'],
-        ['--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
-         '--geo-bypass'],
     ]
 
     for idx, extra_args in enumerate(clients):
@@ -71,19 +69,5 @@ def download_audio(url, story_name=None):
         except Exception as e:
             print(f'Client {idx} error: {e}')
 
-    print('All clients failed. Generating test audio.')
-    return generate_test_audio(story_name)
-
-def generate_test_audio(story_name):
-    audio_path = os.path.join(config.AUDIO_DIR, f'{story_name}_test.mp3')
-    try:
-        subprocess.run([
-            'ffmpeg', '-y', '-f', 'lavfi', '-i',
-            'sine=frequency=220:duration=30', '-b:a', '128k', audio_path
-        ], capture_output=True, timeout=30)
-        if os.path.exists(audio_path):
-            print(f'Generated test audio: {audio_path}')
-            return audio_path, story_name
-    except:
-        pass
+    print('All clients failed to download audio.')
     return None, None

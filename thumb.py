@@ -14,7 +14,7 @@ except ImportError:
     Image = ImageDraw = ImageFont = None
 
 def generate_ai_thumbnail(story_name):
-    if not config.HUGGINGFACE_TOKEN:
+    if not config.HUGGINGFACE_TOKEN or requests is None:
         return generate_fallback_thumbnail(story_name)
 
     prompt = f'{config.SD_PROMPT}, {story_name}'
