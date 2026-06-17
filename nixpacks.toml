@@ -1,6 +1,0 @@
-[phases.setup]
-nixPkgs = ['ffmpeg', 'yt-dlp', 'fontconfig', 'dejavu-fonts']
-
-[deploy]
-startCmd = "python server.py"
-healthCheckPath = "/health"

@@ -1,9 +1,17 @@
 import os
 import random
-import requests
 import json
-from PIL import Image, ImageDraw, ImageFont
 import config
+
+try:
+    import requests
+except ImportError:
+    requests = None
+
+try:
+    from PIL import Image, ImageDraw, ImageFont
+except ImportError:
+    Image = ImageDraw = ImageFont = None
 
 def generate_ai_thumbnail(story_name):
     if not config.HUGGINGFACE_TOKEN:
@@ -39,6 +47,10 @@ def generate_ai_thumbnail(story_name):
         return generate_fallback_thumbnail(story_name)
 
 def generate_fallback_thumbnail(story_name):
+    if Image is None or ImageDraw is None:
+        print('Pillow not available. Cannot generate thumbnail.')
+        return None
+
     os.makedirs(config.THUMB_DIR, exist_ok=True)
     img = Image.new('RGB', (config.THUMB_WIDTH, config.THUMB_HEIGHT), color=(15, 10, 25))
     draw = ImageDraw.Draw(img)
