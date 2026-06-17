@@ -1,6 +1,7 @@
 import os
 import json
 import pickle
+from datetime import date
 import config
 
 SCOPES = ['https://www.googleapis.com/auth/youtube.upload']
@@ -51,7 +52,8 @@ def upload_video(video_path, story_name, description=''):
 
     from googleapiclient.http import MediaFileUpload
 
-    title = f'{config.YOUTUBE_CHANNEL_NAME} - {story_name.replace("_", " ").replace("-", " ")}'
+    today = date.today().strftime('%d %B %Y')
+    title = f'{config.YOUTUBE_CHANNEL_NAME} - {story_name.replace("_", " ").replace("-", " ")} | {today}'
     if not description:
         description = (
             f'{title}\n\n'

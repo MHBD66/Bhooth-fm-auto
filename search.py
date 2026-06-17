@@ -1,12 +1,10 @@
 import os
 import subprocess
 import config
-from datetime import date
 
 def search_new_videos(max_results=15):
-    today = date.today().strftime('%B %d %Y')
-    query = f'ytsearch{max_results}:{config.SEARCH_QUERY} {today}'
-    print(f'Searching YouTube: {config.SEARCH_QUERY} ({today})')
+    query = f'ytsearch{max_results}:{config.SEARCH_QUERY}'
+    print(f'Searching YouTube: {config.SEARCH_QUERY}')
 
     done = set()
     if os.path.exists(config.DONE_FILE):
