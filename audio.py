@@ -40,18 +40,42 @@ def download_audio(url, story_name=None):
             '-o', output_path,
             '--no-playlist',
             '--quiet',
-            '--extractor-args', 'youtube:player_client=android',
+            '--extractor-args', 'youtube:player_client=android;skip_webpage_download=True',
             '--user-agent', 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36',
-            '--sleep-requests', '1',
+            '--sleep-requests', '2',
+            '--retries', '5',
+            '--throttled-rate', '1M',
             url
-        ], capture_output=True, text=True, timeout=300)
+        ], capture_output=True, text=True, timeout=600)
 
         if result.returncode == 0:
             for f in os.listdir(config.AUDIO_DIR):
                 if f.startswith(story_name) and f.endswith('.mp3'):
                     return os.path.join(config.AUDIO_DIR, f), story_name
 
-        print(f'yt-dlp failed: {result.stderr[:200]}')
+        print(f'yt-dlp failed: {result.stderr[:500]}')
+        print('Trying with iOS client...')
+        result = subprocess.run([
+            'yt-dlp',
+            '--extract-audio', '--audio-format', 'mp3',
+            '--audio-quality', '0',
+            '-o', output_path,
+            '--no-playlist',
+            '--quiet',
+            '--extractor-args', 'youtube:player_client=ios;skip_webpage_download=True',
+            '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
+            '--sleep-requests', '3',
+            '--retries', '5',
+            '--throttled-rate', '1M',
+            url
+        ], capture_output=True, text=True, timeout=600)
+
+        if result.returncode == 0:
+            for f in os.listdir(config.AUDIO_DIR):
+                if f.startswith(story_name) and f.endswith('.mp3'):
+                    return os.path.join(config.AUDIO_DIR, f), story_name
+
+        print(f'iOS client also failed: {result.stderr[:200]}')
         return generate_test_audio(story_name)
     except subprocess.TimeoutExpired:
         print('Audio download timed out, using test audio')
