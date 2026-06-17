@@ -16,15 +16,20 @@ def get_story_name(url):
     for attempt in range(3):
         try:
             result = subprocess.run(
-                ['yt-dlp', '--print', 'title', '--retries', '5',
-                 '--retry-sleep', 'exp=3:10', url],
-                capture_output=True, text=True, timeout=30
+                ['yt-dlp', '--print', 'title', '--retries', '10',
+                 '--retry-sleep', 'exp=5:30',
+                 '--geo-bypass',
+                 '--extractor-args', 'youtube:player_skip=webpage,configs',
+                 url],
+                capture_output=True, text=True, timeout=60
             )
             if result.returncode == 0 and result.stdout.strip():
                 return sanitize_filename(result.stdout.strip())
         except:
             pass
         print(f'get_story_name attempt {attempt + 1} failed, retrying...')
+        import time
+        time.sleep(5)
     return f'story_{get_random_id()}'
 
 def download_audio(url, story_name=None):
@@ -44,45 +49,52 @@ def download_audio(url, story_name=None):
 
     cookies_path = os.path.join(config.BASE_DIR, 'cookies.txt')
     has_cookies = os.path.exists(cookies_path) and os.path.getsize(cookies_path) > 0
+    cookies_arg = ['--cookies', cookies_path] if has_cookies else []
 
     clients = [
         {
-            'args': ['--extractor-args', 'youtube:player_client=android;skip_webpage_download=True',
+            'args': ['--extractor-args', 'youtube:player_client=android;player_skip=webpage,configs;skip_webpage_download=True',
                      '--user-agent', 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.113 Mobile Safari/537.36'],
-            'use_cookies': False,
         },
         {
-            'args': ['--extractor-args', 'youtube:player_client=ios',
+            'args': ['--extractor-args', 'youtube:player_client=ios;player_skip=webpage,configs',
                      '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'],
-            'use_cookies': False,
         },
         {
-            'args': ['--extractor-args', 'youtube:player_client=web;skip_webpage_download=True',
+            'args': ['--extractor-args', 'youtube:player_client=web;player_skip=webpage,configs;skip_webpage_download=True',
                      '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'],
-            'use_cookies': True,
         },
         {
-            'args': ['--extractor-args', 'youtube:player_client=tv',
+            'args': ['--extractor-args', 'youtube:player_client=tv;player_skip=webpage,configs',
                      '--user-agent', 'Mozilla/5.0 (SMART-TV; Linux; Tizen 6.0) AppleWebKit/537.36 (KHTML, like Gecko) SamsungTV/6.0'],
-            'use_cookies': True,
         },
     ]
 
     for idx, client in enumerate(clients):
         try:
-            client_cookies = ['--cookies', cookies_path] if has_cookies and client['use_cookies'] else []
+            if idx > 0:
+                delay = random.uniform(5, 15)
+                print(f'Waiting {delay:.0f}s before client {idx}...')
+                import time
+                time.sleep(delay)
+
             cmd = [
                 'yt-dlp', '--extract-audio', '--audio-format', 'mp3',
                 '--audio-quality', '0', '-o', output_path,
                 '--no-playlist', '--quiet',
-                '--sleep-requests', '10',
-                '--retries', '15',
-                '--extractor-retries', '5',
-                '--retry-sleep', 'exp=5:30',
-                '--throttled-rate', '100K',
+                '--sleep-requests', '15',
+                '--sleep-interval', '30',
+                '--retries', '20',
+                '--extractor-retries', '10',
+                '--retry-sleep', 'exp=10:60',
+                '--throttled-rate', '50K',
+                '--geo-bypass',
+                *cookies_arg,
                 *client['args'],
-            ] + client_cookies + [url]
+                url,
+            ]
 
+            print(f'Client {idx} attempting...')
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
 
             if result.returncode == 0:
