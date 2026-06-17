@@ -13,15 +13,18 @@ def get_random_id():
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
 
 def get_story_name(url):
-    try:
-        result = subprocess.run(
-            ['yt-dlp', '--print', 'title', url],
-            capture_output=True, text=True, timeout=30
-        )
-        if result.returncode == 0:
-            return sanitize_filename(result.stdout.strip())
-    except:
-        pass
+    for attempt in range(3):
+        try:
+            result = subprocess.run(
+                ['yt-dlp', '--print', 'title', '--retries', '5',
+                 '--retry-sleep', '3,10', url],
+                capture_output=True, text=True, timeout=30
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                return sanitize_filename(result.stdout.strip())
+        except:
+            pass
+        print(f'get_story_name attempt {attempt + 1} failed, retrying...')
     return f'story_{get_random_id()}'
 
 def download_audio(url, story_name=None):
@@ -36,12 +39,14 @@ def download_audio(url, story_name=None):
     cookies_arg = ['--cookies', cookies_path] if os.path.exists(cookies_path) else []
 
     clients = [
-        ['--extractor-args', 'youtube:player_client=ios',
-         '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'],
-        ['--extractor-args', 'youtube:player_client=web_embedded;skip_webpage_download=True',
-         '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'],
         ['--extractor-args', 'youtube:player_client=android;skip_webpage_download=True',
          '--user-agent', 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.113 Mobile Safari/537.36'],
+        ['--extractor-args', 'youtube:player_client=ios',
+         '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'],
+        ['--extractor-args', 'youtube:player_client=web;skip_webpage_download=True',
+         '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'],
+        ['--extractor-args', 'youtube:player_client=tv',
+         '--user-agent', 'Mozilla/5.0 (SMART-TV; Linux; Tizen 6.0) AppleWebKit/537.36 (KHTML, like Gecko) SamsungTV/6.0'],
     ]
 
     for idx, extra_args in enumerate(clients):
@@ -50,9 +55,11 @@ def download_audio(url, story_name=None):
                 'yt-dlp', '--extract-audio', '--audio-format', 'mp3',
                 '--audio-quality', '0', '-o', output_path,
                 '--no-playlist', '--quiet',
-                '--sleep-requests', '5',
-                '--retries', '10',
-                '--throttled-rate', '500K',
+                '--sleep-requests', '10',
+                '--retries', '15',
+                '--extractor-retries', '5',
+                '--retry-sleep', '5,30',
+                '--throttled-rate', '100K',
                 *extra_args,
             ] + cookies_arg + [url]
 
