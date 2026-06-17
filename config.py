@@ -34,7 +34,7 @@ YT_TAGS = ['Bhoot FM', 'Bhooter Golpo', 'Bangla Horror Story', 'Ghost Story Bang
            'ভূতের গল্প', 'বাংলা হরর স্টোরি', 'Bhoot FM Bangladesh']
 
 # YouTube search settings
-SEARCH_QUERY = os.getenv('SEARCH_QUERY', 'Bhoot FM ভূতের গল্প bangla horror story')
+SEARCH_QUERY = os.getenv('SEARCH_QUERY', 'Bhoot FM')
 
 # Stable Diffusion settings
 SD_MODEL = os.getenv('SD_MODEL', 'stabilityai/stable-diffusion-2-1')

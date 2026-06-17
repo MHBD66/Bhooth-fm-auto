@@ -1,18 +1,19 @@
 import os
 import subprocess
 import config
-
-SEARCH_QUERY = os.getenv('SEARCH_QUERY', 'Bhoot FM ভূতের গল্প bangla horror story')
+from datetime import date
 
 def search_new_videos(max_results=15):
+    today = date.today().strftime('%B %d %Y')
+    query = f'ytsearch{max_results}:{config.SEARCH_QUERY} {today}'
+    print(f'Searching YouTube: {config.SEARCH_QUERY} ({today})')
+
     done = set()
     if os.path.exists(config.DONE_FILE):
         with open(config.DONE_FILE, 'r') as f:
             done = set(line.strip() for line in f)
 
     try:
-        query = f'ytsearch{max_results}:{SEARCH_QUERY}'
-        print(f'Searching YouTube: {SEARCH_QUERY}')
         result = subprocess.run([
             'yt-dlp', '--flat-playlist', '--no-warnings',
             '--print', 'url', '--print', 'title',
