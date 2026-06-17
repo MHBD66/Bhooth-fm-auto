@@ -12,6 +12,7 @@ def get_authenticated_service():
         from googleapiclient.discovery import build
     except ImportError as e:
         print(f'Google API imports failed: {e}')
+        print('Install with: pip install google-auth-oauthlib google-api-python-client')
         return None
 
     credentials = None
