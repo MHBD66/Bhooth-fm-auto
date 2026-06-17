@@ -32,57 +32,44 @@ def download_audio(url, story_name=None):
         story_name = get_story_name(url)
     output_path = os.path.join(config.AUDIO_DIR, f'{story_name}.%(ext)s')
 
-    try:
-        result = subprocess.run([
-            'yt-dlp',
-            '--extract-audio', '--audio-format', 'mp3',
-            '--audio-quality', '0',
-            '-o', output_path,
-            '--no-playlist',
-            '--quiet',
-            '--extractor-args', 'youtube:player_client=android;skip_webpage_download=True',
-            '--user-agent', 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36',
-            '--sleep-requests', '2',
-            '--retries', '5',
-            '--throttled-rate', '1M',
-            url
-        ], capture_output=True, text=True, timeout=600)
+    cookies_path = os.path.join(config.BASE_DIR, 'cookies.txt')
+    cookies_arg = ['--cookies', cookies_path] if os.path.exists(cookies_path) else []
 
-        if result.returncode == 0:
-            for f in os.listdir(config.AUDIO_DIR):
-                if f.startswith(story_name) and f.endswith('.mp3'):
-                    return os.path.join(config.AUDIO_DIR, f), story_name
+    clients = [
+        ['--extractor-args', 'youtube:player_client=web_embedded;skip_webpage_download=True',
+         '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'],
+        ['--extractor-args', 'youtube:player_client=android;skip_webpage_download=True',
+         '--user-agent', 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36'],
+        ['--extractor-args', 'youtube:player_client=ios;skip_webpage_download=True',
+         '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) AppleWebKit/605.1.15'],
+    ]
 
-        print(f'yt-dlp failed: {result.stderr[:500]}')
-        print('Trying with iOS client...')
-        result = subprocess.run([
-            'yt-dlp',
-            '--extract-audio', '--audio-format', 'mp3',
-            '--audio-quality', '0',
-            '-o', output_path,
-            '--no-playlist',
-            '--quiet',
-            '--extractor-args', 'youtube:player_client=ios;skip_webpage_download=True',
-            '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15',
-            '--sleep-requests', '3',
-            '--retries', '5',
-            '--throttled-rate', '1M',
-            url
-        ], capture_output=True, text=True, timeout=600)
+    for idx, extra_args in enumerate(clients):
+        try:
+            cmd = [
+                'yt-dlp', '--extract-audio', '--audio-format', 'mp3',
+                '--audio-quality', '0', '-o', output_path,
+                '--no-playlist', '--quiet',
+                *extra_args,
+                '--sleep-requests', '3',
+                '--retries', '3',
+            ] + cookies_arg + [url]
 
-        if result.returncode == 0:
-            for f in os.listdir(config.AUDIO_DIR):
-                if f.startswith(story_name) and f.endswith('.mp3'):
-                    return os.path.join(config.AUDIO_DIR, f), story_name
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
 
-        print(f'iOS client also failed: {result.stderr[:200]}')
-        return generate_test_audio(story_name)
-    except subprocess.TimeoutExpired:
-        print('Audio download timed out, using test audio')
-        return generate_test_audio(story_name)
-    except Exception as e:
-        print(f'Audio download error: {e}')
-        return generate_test_audio(story_name)
+            if result.returncode == 0:
+                for f in os.listdir(config.AUDIO_DIR):
+                    if f.startswith(story_name) and f.endswith('.mp3'):
+                        return os.path.join(config.AUDIO_DIR, f), story_name
+
+            print(f'Client {idx} failed: {result.stderr[:200]}')
+        except subprocess.TimeoutExpired:
+            print(f'Client {idx} timed out')
+        except Exception as e:
+            print(f'Client {idx} error: {e}')
+
+    print('All clients failed. Generating test audio.')
+    return generate_test_audio(story_name)
 
 def generate_test_audio(story_name):
     audio_path = os.path.join(config.AUDIO_DIR, f'{story_name}_test.mp3')
