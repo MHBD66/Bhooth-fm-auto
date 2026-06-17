@@ -34,9 +34,16 @@ def download_audio(url, story_name=None):
 
     try:
         result = subprocess.run([
-            'yt-dlp', '--extract-audio', '--audio-format', 'mp3',
-            '--audio-quality', '0', '-o', output_path, '--no-playlist',
-            '--quiet', url
+            'yt-dlp',
+            '--extract-audio', '--audio-format', 'mp3',
+            '--audio-quality', '0',
+            '-o', output_path,
+            '--no-playlist',
+            '--quiet',
+            '--extractor-args', 'youtube:player_client=android',
+            '--user-agent', 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36',
+            '--sleep-requests', '1',
+            url
         ], capture_output=True, text=True, timeout=300)
 
         if result.returncode == 0:

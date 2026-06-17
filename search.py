@@ -16,6 +16,9 @@ def search_new_videos(max_results=15):
         result = subprocess.run([
             'yt-dlp', '--flat-playlist', '--no-warnings',
             '--print', 'url', '--print', 'title',
+            '--extractor-args', 'youtube:player_client=android',
+            '--user-agent', 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36',
+            '--sleep-requests', '1',
             query
         ], capture_output=True, text=True, timeout=60)
 

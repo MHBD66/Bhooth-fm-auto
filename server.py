@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import traceback
+import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 try:
@@ -75,13 +76,16 @@ def run_server():
         sys.exit(1)
 
     if os.getenv('RAILWAY_CRON'):
-        print('[BOOT] RAILWAY_CRON set, running pipeline...', flush=True)
-        try:
-            from main import run_pipeline
-            run_pipeline()
-            print('[BOOT] Pipeline done', flush=True)
-        except Exception as e:
-            print(f'[BOOT] Pipeline error: {e}', flush=True)
+        print('[BOOT] RAILWAY_CRON set, launching pipeline in background...', flush=True)
+        def _run():
+            try:
+                from main import run_pipeline
+                run_pipeline()
+                print('[BOOT] Pipeline done', flush=True)
+            except Exception as e:
+                print(f'[BOOT] Pipeline error: {e}', flush=True)
+        t = threading.Thread(target=_run, daemon=True)
+        t.start()
 
     print('[BOOT] Ready', flush=True)
     server.serve_forever()
