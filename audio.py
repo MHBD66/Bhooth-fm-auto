@@ -29,6 +29,13 @@ def get_story_name(url):
 
 def download_audio(url, story_name=None):
     os.makedirs(config.AUDIO_DIR, exist_ok=True)
+
+    try:
+        subprocess.run(['yt-dlp', '--version'], capture_output=True, timeout=10)
+    except FileNotFoundError:
+        print('yt-dlp not found. Install with: pip install yt-dlp')
+        return None, None
+
     if story_name:
         story_name = sanitize_filename(story_name)
     else:
