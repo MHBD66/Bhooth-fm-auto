@@ -36,12 +36,14 @@ def download_audio(url, story_name=None):
     cookies_arg = ['--cookies', cookies_path] if os.path.exists(cookies_path) else []
 
     clients = [
-        ['--extractor-args', 'youtube:player_client=web_embedded;skip_webpage_download=True',
-         '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'],
-        ['--extractor-args', 'youtube:player_client=android;skip_webpage_download=True',
-         '--user-agent', 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36'],
         ['--extractor-args', 'youtube:player_client=ios;skip_webpage_download=True',
-         '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) AppleWebKit/605.1.15'],
+         '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'],
+        ['--extractor-args', 'youtube:player_client=web_embedded;skip_webpage_download=True',
+         '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'],
+        ['--extractor-args', 'youtube:player_client=android;skip_webpage_download=True',
+         '--user-agent', 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.113 Mobile Safari/537.36'],
+        ['--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+         '--geo-bypass'],
     ]
 
     for idx, extra_args in enumerate(clients):
@@ -50,9 +52,10 @@ def download_audio(url, story_name=None):
                 'yt-dlp', '--extract-audio', '--audio-format', 'mp3',
                 '--audio-quality', '0', '-o', output_path,
                 '--no-playlist', '--quiet',
+                '--sleep-requests', '5',
+                '--retries', '10',
+                '--throttled-rate', '500K',
                 *extra_args,
-                '--sleep-requests', '3',
-                '--retries', '3',
             ] + cookies_arg + [url]
 
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
