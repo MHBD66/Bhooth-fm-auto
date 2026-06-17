@@ -1,4 +1,5 @@
 import os
+import json
 import subprocess
 import config
 
@@ -14,27 +15,33 @@ def search_new_videos(max_results=15):
     try:
         result = subprocess.run([
             'yt-dlp', '--flat-playlist', '--no-warnings',
-            '--print', 'url', '--print', 'title',
-            '--extractor-args', 'youtube:player_client=android',
-            '--user-agent', 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36',
+            '--dump-json',
+            '--user-agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
             '--sleep-requests', '1',
             query
         ], capture_output=True, text=True, timeout=60)
 
         if result.returncode != 0:
-            print(f'YouTube search failed: {result.stderr[:200]}')
+            print(f'Search failed: {result.stderr[:200]}')
             return []
 
-        lines = result.stdout.strip().split('\n')
         videos = []
-        for i in range(0, len(lines), 2):
-            if i + 1 < len(lines):
-                url = lines[i].strip()
-                title = lines[i + 1].strip()
+        for line in result.stdout.strip().split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                data = json.loads(line)
+                url = data.get('webpage_url', data.get('url', ''))
+                title = data.get('title', '')
                 if url and title and url not in done:
                     videos.append({'url': url, 'title': title})
+            except json.JSONDecodeError:
+                continue
 
         print(f'Found {len(videos)} new videos')
+        if not videos and result.stdout.strip():
+            print(f'Raw output: {result.stdout[:300]}')
         return videos
 
     except subprocess.TimeoutExpired:

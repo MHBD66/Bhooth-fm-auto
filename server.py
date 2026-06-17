@@ -3,6 +3,7 @@ import sys
 import json
 import traceback
 import threading
+import socket
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 try:
