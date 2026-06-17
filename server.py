@@ -66,6 +66,15 @@ class HealthHandler(BaseHTTPRequestHandler):
         pass
 
 def run_server():
+    cookies_from_env = os.getenv('COOKIES_TXT')
+    if cookies_from_env:
+        try:
+            with open(os.path.join(os.path.dirname(__file__), 'cookies.txt'), 'w') as f:
+                f.write(cookies_from_env)
+            print('[BOOT] Cookies written from env var', flush=True)
+        except Exception as e:
+            print(f'[BOOT] Failed to write cookies: {e}', flush=True)
+
     port = int(os.getenv('PORT', 8080))
     print(f'[BOOT] Starting server on port {port}', flush=True)
 
