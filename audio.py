@@ -4,6 +4,7 @@ import config
 import re
 import random
 import string
+import time
 
 def sanitize_filename(name):
     name = re.sub(r'[<>:"/\\|?*]', '_', name)
@@ -43,13 +44,18 @@ def find_audio_file(story_name):
                 return os.path.join(config.AUDIO_DIR, f)
     return None
 
+def check_ytdlp():
+    try:
+        import yt_dlp
+        return True
+    except ImportError:
+        print('yt-dlp not found. Install with: pip install yt-dlp')
+        return False
+
 def download_audio(url, story_name=None):
     os.makedirs(config.AUDIO_DIR, exist_ok=True)
 
-    try:
-        subprocess.run(['yt-dlp', '--version'], capture_output=True, timeout=10)
-    except FileNotFoundError:
-        print('yt-dlp not found. Install with: pip install yt-dlp')
+    if not check_ytdlp():
         return None, None
 
     if story_name:
@@ -62,51 +68,63 @@ def download_audio(url, story_name=None):
 
     strategies = [
         {
-            'name': 'simple download',
-            'args': ['--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'],
+            'name': 'bestaudio (format 251/140)',
+            'format': 'bestaudio',
+            'extract_args': [],
+            'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
         {
-            'name': 'android client',
-            'args': ['--extractor-args', 'youtube:player_client=android',
-                     '--user-agent', 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36'],
+            'name': 'format 251 (opus)',
+            'format': '251',
+            'extract_args': [],
+            'ua': 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36',
+        },
+        {
+            'name': 'format 140 (m4a)',
+            'format': '140',
+            'extract_args': [],
+            'ua': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         },
     ]
 
     for idx, strategy in enumerate(strategies):
         try:
+            if idx > 0:
+                time.sleep(random.uniform(3, 8))
+
             output_path = os.path.join(config.AUDIO_DIR, f'{story_name}.%(ext)s')
 
             cmd = [
                 'yt-dlp',
-                '-f', 'bestaudio',
+                '-f', strategy['format'],
                 '--extract-audio', '--audio-format', 'mp3',
                 '--audio-quality', '0',
                 '-o', output_path,
                 '--no-playlist',
-                '--sleep-requests', '2',
-                '--retries', '10',
+                '--sleep-requests', '1',
+                '--retries', '5',
                 '--geo-bypass',
                 '--no-check-certificate',
             ]
             if has_cookies:
                 cmd += ['--cookies', cookies_path]
-            cmd += strategy['args']
+            cmd += ['--user-agent', strategy['ua']]
             cmd += [url]
 
-            print(f'Strategy {idx} ({strategy["name"]}) attempting...')
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            print(f'Strategy {idx} ({strategy["name"]})...')
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
 
             if result.returncode == 0:
                 audio_file = find_audio_file(story_name)
                 if audio_file:
                     return audio_file, story_name
 
-            stderr_short = result.stderr[:300] if result.stderr else ''
-            print(f'Strategy {idx} failed: {stderr_short}')
+            err = result.stderr[:200] if result.stderr else ''
+            print(f'  Failed: {err}')
         except subprocess.TimeoutExpired:
-            print(f'Strategy {idx} timed out')
+            print(f'  Timed out')
         except Exception as e:
-            print(f'Strategy {idx} error: {e}')
+            print(f'  Error: {e}')
 
     print('All download strategies failed.')
     return None, None
