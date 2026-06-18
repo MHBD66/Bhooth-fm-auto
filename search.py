@@ -14,12 +14,11 @@ def search_new_videos(max_results=15):
 
     try:
         result = subprocess.run([
-            'yt-dlp', '--flat-playlist', '--no-warnings',
-            '--dump-json',
-            '--user-agent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36',
-            '--sleep-requests', '1',
+            'yt-dlp', '--flat-playlist', '--dump-json',
+            '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            '--geo-bypass',
             query
-        ], capture_output=True, text=True, timeout=60)
+        ], capture_output=True, text=True, timeout=90)
 
         if result.returncode != 0:
             print(f'Search failed: {result.stderr[:200]}')

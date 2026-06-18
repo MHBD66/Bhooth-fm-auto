@@ -56,69 +56,45 @@ def download_audio(url, story_name=None):
         story_name = sanitize_filename(story_name)
     else:
         story_name = get_story_name(url)
-    output_path = os.path.join(config.AUDIO_DIR, f'{story_name}.%(ext)s')
 
     cookies_path = os.path.join(config.BASE_DIR, 'cookies.txt')
     has_cookies = os.path.exists(cookies_path) and os.path.getsize(cookies_path) > 0
 
-    base_args = [
-        '--no-playlist', '--quiet',
-        '--sleep-requests', '15',
-        '--sleep-interval', '30',
-        '--retries', '20',
-        '--extractor-retries', '10',
-        '--retry-sleep', 'exp=10:60',
-        '--throttled-rate', '50K',
-        '--geo-bypass',
-        '--no-check-certificate',
-    ]
-    if has_cookies:
-        base_args += ['--cookies', cookies_path]
-
     strategies = [
         {
-            'name': 'android + cookies + dash disabled',
-            'args': ['--extractor-args', 'youtube:player_client=android,web;include_dash_manifests=False',
-                     '--user-agent', 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.6422.113 Mobile Safari/537.36'],
+            'name': 'simple download',
+            'args': ['--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'],
         },
         {
-            'name': 'ios + cookies',
-            'args': ['--extractor-args', 'youtube:player_client=ios',
-                     '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'],
-        },
-        {
-            'name': 'web + cookies',
-            'args': ['--extractor-args', 'youtube:player_client=web',
-                     '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36'],
-        },
-        {
-            'name': 'tv + cookies',
-            'args': ['--extractor-args', 'youtube:player_client=tv',
-                     '--user-agent', 'Mozilla/5.0 (SMART-TV; Linux; Tizen 6.0) AppleWebKit/537.36 (KHTML, like Gecko) SamsungTV/6.0'],
+            'name': 'android client',
+            'args': ['--extractor-args', 'youtube:player_client=android',
+                     '--user-agent', 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36'],
         },
     ]
 
     for idx, strategy in enumerate(strategies):
         try:
-            if idx > 0:
-                delay = random.uniform(10, 25)
-                print(f'Waiting {delay:.0f}s before strategy {idx}...')
-                import time
-                time.sleep(delay)
+            output_path = os.path.join(config.AUDIO_DIR, f'{story_name}.%(ext)s')
 
             cmd = [
                 'yt-dlp',
-                '-f', 'bestaudio/best',
+                '-f', 'bestaudio',
                 '--extract-audio', '--audio-format', 'mp3',
                 '--audio-quality', '0',
                 '-o', output_path,
-                *base_args,
-                *strategy['args'],
-                url,
+                '--no-playlist',
+                '--sleep-requests', '2',
+                '--retries', '10',
+                '--geo-bypass',
+                '--no-check-certificate',
             ]
+            if has_cookies:
+                cmd += ['--cookies', cookies_path]
+            cmd += strategy['args']
+            cmd += [url]
 
             print(f'Strategy {idx} ({strategy["name"]}) attempting...')
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
 
             if result.returncode == 0:
                 audio_file = find_audio_file(story_name)
